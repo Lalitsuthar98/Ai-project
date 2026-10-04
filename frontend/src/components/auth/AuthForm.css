@@ -1,0 +1,181 @@
+.auth-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 17px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.form-field label {
+  font-size: 11px;
+
+  font-weight: 600;
+
+  color: #d4d4d8;
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-btn {
+  padding: 0;
+
+  background: transparent;
+
+  color: #a78bfa;
+
+  font-size: 10px;
+}
+
+.forgot-btn:hover {
+  color: #c4b5fd;
+}
+
+.input-wrapper {
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 0 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: #52525b;
+
+  transition: 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: rgba(167, 139, 250, 0.45);
+
+  background: rgba(255, 255, 255, 0.035);
+
+  box-shadow:
+    0 0 0 3px rgba(124, 58, 237, 0.07);
+}
+
+.input-wrapper input {
+  width: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #f4f4f5;
+
+  font-size: 13px;
+}
+
+.input-wrapper input::placeholder {
+  color: #52525b;
+}
+
+.password-toggle {
+  display: flex;
+  align-items: center;
+
+  padding: 3px;
+
+  background: transparent;
+
+  color: #52525b;
+}
+
+.password-toggle:hover {
+  color: #a1a1aa;
+}
+
+.auth-submit {
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 4px;
+
+  border-radius: 10px;
+
+  background: #f4f4f5;
+
+  color: #09090b;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  transition: 0.2s ease;
+}
+
+.auth-submit:hover {
+  background: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 10px 30px rgba(255, 255, 255, 0.08);
+}
+
+.auth-switch {
+  margin-top: 6px;
+
+  text-align: center;
+
+  color: #71717a;
+
+  font-size: 11px;
+}
+
+.auth-switch a {
+  margin-left: 5px;
+
+  color: #a78bfa;
+
+  font-weight: 600;
+}
+
+.auth-switch a:hover {
+  color: #c4b5fd;
+}
+.auth-error {
+  padding: 11px 12px;
+
+  border: 1px solid rgba(239, 68, 68, 0.2);
+
+  border-radius: 9px;
+
+  background: rgba(239, 68, 68, 0.07);
+
+  color: #fca5a5;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.auth-submit:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.6;
+
+  transform: none;
+}
