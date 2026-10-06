@@ -17,6 +17,7 @@ import "./Sidebar.css";
 
 function Sidebar({
   chats,
+  selectedChatId,
   onSelectChat,
   onNewChat,
   onChatDeleted,

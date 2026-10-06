@@ -408,7 +408,40 @@
 
 .message {
   display: flex;
+  flex-direction: column;
   width: 100%;
+}
+
+.assistant-message {
+  align-items: flex-start;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  margin-left: 0;
+}
+
+.copy-button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #9b9bad;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 7px;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background: rgba(155, 135, 255, 0.12);
+  border-color: rgba(155, 135, 255, 0.25);
+  color: #ffffff;
+}
+
+.copy-button:active {
+  transform: scale(0.96);
 }
 
 
@@ -445,14 +478,13 @@
 
 .assistant-message {
   justify-content: flex-start;
+  align-items: flex-start;
 }
 
 
 .assistant-message .message-content {
   max-width: 85%;
-
   color: #e7e7ea;
-
   padding: 4px 0;
 }
 
@@ -614,4 +646,65 @@
   display: block;
 
   padding: 0;
+}
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.copy-button {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #9b9bad;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 7px;
+    transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+    background: rgba(155, 135, 255, 0.12);
+    border-color: rgba(155, 135, 255, 0.25);
+    color: #ffffff;
+}
+
+.copy-button:active {
+    transform: scale(0.96);
+}
+
+.copy-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.stop-button {
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #111111;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition: all 0.2s ease;
+}
+
+.stop-button:hover {
+    transform: scale(1.04);
+    background: #eeeeee;
+}
+
+.stop-button:active {
+    transform: scale(0.96);
 }

@@ -6,10 +6,14 @@ import {
 import { useState } from "react";
 
 
-function MessageInput({ onSend, disabled = false }) {
+function MessageInput({
+  onSend,
+  isStreaming,
+  onStopGeneration,
+  disabled = false
+}) {
 
-  const [content, setContent] =
-    useState("");
+  const [content, setContent] = useState("");
 
 
   // ==================================================
@@ -18,8 +22,7 @@ function MessageInput({ onSend, disabled = false }) {
 
   const handleSubmit = async () => {
 
-    const cleanContent =
-      content.trim();
+    const cleanContent = content.trim();
 
     if (!cleanContent) {
       return;
@@ -59,6 +62,10 @@ function MessageInput({ onSend, disabled = false }) {
 
       <div className="message-input">
 
+        {/* ==========================================
+            ATTACHMENT BUTTON
+        ========================================== */}
+
         <button
           className="input-icon"
           type="button"
@@ -67,6 +74,10 @@ function MessageInput({ onSend, disabled = false }) {
           <Paperclip size={19} />
         </button>
 
+
+        {/* ==========================================
+            MESSAGE TEXTAREA
+        ========================================== */}
 
         <textarea
           placeholder={
@@ -89,22 +100,44 @@ function MessageInput({ onSend, disabled = false }) {
         />
 
 
-        <button
-          className="send-btn"
-          type="button"
+        {/* ==========================================
+            SEND / STOP BUTTON
+        ========================================== */}
 
-          onClick={handleSubmit}
+        {isStreaming ? (
 
-          disabled={
-            disabled ||
-            !content.trim()
-          }
-        >
-          <ArrowUp size={18} />
-        </button>
+          <button
+            className="stop-button"
+            type="button"
+            onClick={onStopGeneration}
+            title="Stop generating"
+          >
+            ■
+          </button>
+
+        ) : (
+
+          <button
+            className="send-btn"
+            type="button"
+            onClick={handleSubmit}
+            disabled={
+              disabled ||
+              !content.trim()
+            }
+            title="Send message"
+          >
+            <ArrowUp size={18} />
+          </button>
+
+        )}
 
       </div>
 
+
+      {/* ==========================================
+          INPUT HINT
+      ========================================== */}
 
       <p className="input-hint">
         Nova AI can make mistakes. Check important information.

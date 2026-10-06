@@ -84,7 +84,11 @@ export const getmessage = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { content, model } = req.body;
+   const {
+    content,
+    model,
+    regenerate = false,
+} = req.body;
 
     // ------------------------------------------------
     // VALIDATE MESSAGE
@@ -99,9 +103,12 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    const cleanContent = content.trim();
+    let cleanContent = content.trim();
 
     let chatData;
+
+    let regenerateUserId = null;
+    let regenerateAssistantId = null;
 
     // ------------------------------------------------
     // EXISTING CHAT
@@ -124,6 +131,38 @@ export const sendMessage = async (req, res) => {
           message: "Chat not found",
         });
       }
+
+      if (regenerate) {
+
+    const lastMessages = await msg
+        .find({
+            chatId: chatData._id,
+            userId: req.userdata._id,
+        })
+        .sort({ createdAt: -1 })
+        .limit(2);
+
+    const lastAssistant = lastMessages[0];
+    const lastUser = lastMessages[1];
+
+    if (
+        !lastAssistant ||
+        lastAssistant.role !== "assistant" ||
+        !lastUser ||
+        lastUser.role !== "user"
+    ) {
+        return res.status(400).json({
+            message: "Unable to regenerate this response",
+        });
+    }
+
+    regenerateAssistantId = lastAssistant._id;
+    regenerateUserId = lastUser._id;
+
+    // Use the previous user question
+    // instead of creating a new user message.
+    cleanContent = lastUser.content;
+}
 
     } else {
 
@@ -151,14 +190,24 @@ export const sendMessage = async (req, res) => {
     // FETCH UNSUMMARIZED MESSAGES
     // ------------------------------------------------
 
-    const oldMessages = await msg
-      .find({
+     const oldMessages = await msg
+    .find({
         chatId: chatData._id,
-      })
-      .sort({ createdAt: 1 })
-      .skip(
+        ...(regenerate
+            ? {
+                _id: {
+                    $nin: [
+                        regenerateUserId,
+                        regenerateAssistantId,
+                    ],
+                },
+            }
+            : {}),
+    })
+    .sort({ createdAt: 1 })
+    .skip(
         chatData.summarizedTillMessageNumber || 0
-      );
+    );
 
     // ------------------------------------------------
     // BUILD AI CONTEXT
@@ -306,17 +355,29 @@ export const sendMessage = async (req, res) => {
     // SAVE USER MESSAGE
     // =================================================
 
-    const userMessage = await msg.create({
-      chatId: chatData._id,
-      userId: req.userdata._id,
-      role: "user",
-      content: cleanContent,
+   let userMessage = null;
+
+if (!regenerate) {
+
+    userMessage = await msg.create({
+        chatId: chatData._id,
+        userId: req.userdata._id,
+        role: "user",
+        content: cleanContent,
     });
+
+}
 
     // =================================================
     // SAVE ASSISTANT MESSAGE
     // =================================================
+     if (regenerate && regenerateAssistantId) {
 
+    await msg.findByIdAndDelete(
+        regenerateAssistantId
+    );
+
+}
     const assistantMessage = await msg.create({
       chatId: chatData._id,
       userId: req.userdata._id,
@@ -340,8 +401,9 @@ export const sendMessage = async (req, res) => {
     // UPDATE MESSAGE COUNT
     // =================================================
 
-    chatData.messageCount =
-      (chatData.messageCount || 0) + 2;
+     chatData.messageCount =
+    (chatData.messageCount || 0) +
+    (regenerate ? 0 : 2);
 
     // =================================================
     // UPDATE TOPIC

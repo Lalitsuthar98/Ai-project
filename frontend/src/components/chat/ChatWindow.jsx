@@ -21,6 +21,9 @@ function ChatWindow({
     const [messages, setMessages] = useState([]);
     const [chatId, setChatId] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
+    const [copiedMessageId, setCopiedMessageId] = useState(null);
+    const [regeneratingMessageId, setRegeneratingMessageId] =
+    useState(null);
 
     const chatContentRef = useRef(null);
 
@@ -34,6 +37,23 @@ function ChatWindow({
     // Streaming text batching
     const pendingAssistantTextRef = useRef("");
     const animationFrameRef = useRef(null);
+    const abortControllerRef = useRef(null);
+
+
+    const handleCopy = async (messageId, content) => {
+    try {
+        await navigator.clipboard.writeText(content);
+
+        setCopiedMessageId(messageId);
+
+        setTimeout(() => {
+            setCopiedMessageId(null);
+        }, 1500);
+
+    } catch (error) {
+        console.error("Failed to copy message:", error);
+    }
+};
 
 
     /* =========================================
@@ -240,12 +260,18 @@ function ChatWindow({
 
         }, 0);
 
+        const controller = new AbortController();
+
+        abortControllerRef.current = controller;
+
 
         await sendMessageStream({
 
             content,
 
             chatId,
+
+            signal: controller.signal,
 
 
             /* =================================
@@ -362,11 +388,139 @@ function ChatWindow({
 
     };
 
+    const handleStopGeneration = () => {
+
+    if (!abortControllerRef.current) {
+        return;
+    }
+
+    abortControllerRef.current.abort();
+
+    abortControllerRef.current = null;
+
+    setIsStreaming(false);
+
+};
+
+    const handleRegenerate = async (
+    assistantMessageId,
+    userContent
+) => {
+
+    if (isStreaming) {
+        return;
+    }
+
+    const controller = new AbortController();
+
+    abortControllerRef.current = controller;
+
+    const currentMessage = messages.find(
+        message => message.id === assistantMessageId
+    );
+
+    if (!currentMessage) {
+        return;
+    }
+
+    const oldContent = currentMessage.content;
+
+    setRegeneratingMessageId(
+        assistantMessageId
+    );
+
+    setIsStreaming(true);
+
+    pendingAssistantTextRef.current = "";
+
+    // Clear old AI response visually
+    setMessages(previous =>
+        previous.map(message =>
+            message.id === assistantMessageId
+                ? {
+                    ...message,
+                    content: ""
+                }
+                : message
+        )
+    );
+
+    await sendMessageStream({
+
+        content: userContent,
+
+        chatId,
+
+        regenerate: true,
+
+        signal: controller.signal,
+
+        onChunk: (chunk) => {
+
+            pendingAssistantTextRef.current += chunk;
+
+            if (!animationFrameRef.current) {
+
+                animationFrameRef.current =
+                    requestAnimationFrame(() => {
+
+                        flushAssistantText(
+                            assistantMessageId
+                        );
+
+                        animationFrameRef.current =
+                            null;
+                    });
+            }
+        },
+
+        onDone: () => {
+
+            flushAssistantText(
+                assistantMessageId
+            );
+
+            setIsStreaming(false);
+
+            abortControllerRef.current = null;
+
+            setRegeneratingMessageId(null);
+        },
+
+        onError: (error) => {
+
+            console.error(
+                "Regenerate error:",
+                error
+            );
+
+            pendingAssistantTextRef.current = "";
+
+            // Restore old response
+            setMessages(previous =>
+                previous.map(message =>
+                    message.id === assistantMessageId
+                        ? {
+                            ...message,
+                            content: oldContent
+                        }
+                        : message
+                )
+            );
+
+            setIsStreaming(false);
+
+            abortControllerRef.current = null;
+
+            setRegeneratingMessageId(null);
+        },
+    });
+};
+
     const loadChat = async (selectedChatId) => {
     try {
         const data = await getChatMessages(selectedChatId);
 
-        console.log("Loaded chat:", data);
 
         setMessages(data.messages || []);
         setChatId(selectedChatId);
@@ -431,39 +585,47 @@ useEffect(() => {
 
                         <div className="suggestions">
 
-                            <button
-                                onClick={() =>
-                                    handleSendMessage(
-                                        "Explain JavaScript in simple words"
-                                    )
-                                }
-                            >
-                                Explain JavaScript
-                            </button>
+  <button
+    onClick={() =>
+      handleSendMessage(
+        "Explain JavaScript in simple words"
+      )
+    }
+  >
+    Explain JavaScript
+  </button>
 
+  <button
+    onClick={() =>
+      handleSendMessage(
+        "Give me a React learning roadmap"
+      )
+    }
+  >
+    React roadmap
+  </button>
 
-                            <button
-                                onClick={() =>
-                                    handleSendMessage(
-                                        "Give me a React learning roadmap"
-                                    )
-                                }
-                            >
-                                React roadmap
-                            </button>
+  <button
+    onClick={() =>
+      handleSendMessage(
+        "Explain REST API with an example"
+      )
+    }
+  >
+    Explain REST API
+  </button>
 
+  <button
+    onClick={() =>
+      handleSendMessage(
+        "Help me debug my code"
+      )
+    }
+  >
+    Debug my code
+  </button>
 
-                            <button
-                                onClick={() =>
-                                    handleSendMessage(
-                                        "Explain REST API"
-                                    )
-                                }
-                            >
-                                Explain REST API
-                            </button>
-
-                        </div>
+</div>
 
                     </div>
 
@@ -471,52 +633,106 @@ useEffect(() => {
 
                     <div className="messages-container">
 
-                        {messages.map(message => (
+                      {messages.map(message => (
 
-                            <div
-                                key={message.id}
-                                className={`message ${
-                                    message.role === "user"
-                                        ? "user-message"
-                                        : "assistant-message"
-                                }`}
-                            >
+    <div
+        key={message.id}
+        className={`message ${
+            message.role === "user"
+                ? "user-message"
+                : "assistant-message"
+        }`}
+    >
 
-                                <div className="message-content">
+        <div className="message-content">
 
-                                    {message.role === "assistant" ? (
+            {message.role === "assistant" ? (
+                <ReactMarkdown
+                    remarkPlugins={[
+                        remarkGfm
+                    ]}
+                >
+                    {message.content}
+                </ReactMarkdown>
 
-                                        <ReactMarkdown
-                                            remarkPlugins={[
-                                                remarkGfm
-                                            ]}
-                                        >
-                                            {message.content}
-                                        </ReactMarkdown>
+            ) : (
 
-                                    ) : (
+                message.content
 
-                                        message.content
+            )}
 
-                                    )}
+            {message.role === "assistant" &&
+                isStreaming &&
+                message.id ===
+                messages[messages.length - 1]?.id && (
+
+                    <span className="typing-cursor">
+                        ▌
+                    </span>
+                )}
+
+        </div>
 
 
-                                    {message.role === "assistant" &&
-                                        isStreaming &&
-                                        message.id ===
-                                        messages[messages.length - 1]?.id && (
+        {/* MESSAGE ACTIONS */}
 
-                                            <span className="typing-cursor">
-                                                ▌
-                                            </span>
+        {message.role === "assistant" &&
+            message.content && (
 
-                                        )}
+                <div className="message-actions">
 
-                                </div>
+                 <button
+    type="button"
+    className="copy-button"
+    onClick={() =>
+        handleCopy(
+            message.id,
+            message.content
+        )
+    }
+>
+    {copiedMessageId === message.id
+        ? "✓ Copied"
+        : "Copy"}
+</button>
 
-                            </div>
+<button
+    type="button"
+    className="copy-button"
+    disabled={isStreaming}
+    onClick={() => {
 
-                        ))}
+        const messageIndex =
+            messages.findIndex(
+                item => item.id === message.id
+            );
+
+        const previousMessage =
+            messages[messageIndex - 1];
+
+        if (
+            previousMessage?.role === "user"
+        ) {
+            handleRegenerate(
+                message.id,
+                previousMessage.content
+            );
+        }
+
+    }}
+>
+    {regeneratingMessageId === message.id
+        ? "Regenerating..."
+        : "Regenerate"}
+</button>
+
+                </div>
+
+            )}
+
+    </div>
+
+))}
 
                     </div>
 
@@ -529,10 +745,12 @@ useEffect(() => {
                 MESSAGE INPUT
             ================================= */}
 
-            <MessageInput
-                onSend={handleSendMessage}
-                disabled={isStreaming}
-            />
+           <MessageInput
+    onSend={handleSendMessage}
+    isStreaming={isStreaming}
+    onStopGeneration={handleStopGeneration}
+    disabled={false}
+/>
 
         </div>
 

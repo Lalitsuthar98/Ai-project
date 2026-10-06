@@ -13,6 +13,12 @@ msgRouter.use(authenticateRateLimiter);
 msgRouter.post("/",tokenUsageMiddleware,loadUserMiddleware,sendMessage);
 msgRouter.get("/:chatId",loadUserMiddleware,getmessage);
 msgRouter.post("/:chatId",tokenUsageMiddleware,loadUserMiddleware,sendMessage);
+msgRouter.post(
+    "/:chatId/regenerate",
+    tokenUsageMiddleware,
+    loadUserMiddleware,
+    sendMessage
+);
 
 
 export default msgRouter;
